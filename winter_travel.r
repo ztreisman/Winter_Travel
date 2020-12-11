@@ -17,7 +17,7 @@ library(gam)
 
 # Load trailhead data
 
-# Changes: remove spaces from directory names, h -> k,  convert to csv, simplify names
+# Changes: remove spaces from directory names, h -> k,  convert to csv, simplify names, remove summaries at bottom of some files
 
 brush17 <- read_csv("Data_for_Zack/2017-2018/brush.csv")
 cement17 <- read_csv("Data_for_Zack/2017-2018/cement.csv")
