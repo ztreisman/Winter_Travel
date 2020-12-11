@@ -19,45 +19,45 @@ library(gam)
 
 # Changes: remove spaces from directory names, h -> k,  convert to csv, simplify names, remove summaries at bottom of some files
 
-brush17 <- read_csv("Data_for_Zack/2017-2018/brush.csv")
-cement17 <- read_csv("Data_for_Zack/2017-2018/cement.csv")
-gothic17 <- read_csv("Data_for_Zack/2017-2018/gothic.csv")
-kebler17 <- read_csv("Data_for_Zack/2017-2018/kebler.csv")
-slate17 <- read_csv("Data_for_Zack/2017-2018/slate.csv")
-snodgrass17 <- read_csv("Data_for_Zack/2017-2018/snodgrass.csv")
-washington17 <- read_csv("Data_for_Zack/2017-2018/washington.csv")
+brush17 <- read.csv("Data_for_Zack/2017-2018/brush.csv")
+cement17 <- read.csv("Data_for_Zack/2017-2018/cement.csv")
+gothic17 <- read.csv("Data_for_Zack/2017-2018/gothic.csv")
+kebler17 <- read.csv("Data_for_Zack/2017-2018/kebler.csv")
+slate17 <- read.csv("Data_for_Zack/2017-2018/slate.csv")
+snodgrass17 <- read.csv("Data_for_Zack/2017-2018/snodgrass.csv")
+washington17 <- read.csv("Data_for_Zack/2017-2018/washington.csv")
 trailheads1718 <- bind_rows(list(brush17,cement17, gothic17, kebler17, slate17, snodgrass17, washington17))
 
 
-brush18 <- read_csv("Data_for_Zack/2018-2019/brush.csv")
-cement18 <- read_csv("Data_for_Zack/2018-2019/cement.csv")
-gothic18 <- read_csv("Data_for_Zack/2018-2019/gothic.csv")
-kebler18 <- read_csv("Data_for_Zack/2018-2019/kebler.csv")
-slate18 <- read_csv("Data_for_Zack/2018-2019/slate.csv")
-snodgrass18 <- read_csv("Data_for_Zack/2018-2019/snodgrass.csv")
-washington18 <- read_csv("Data_for_Zack/2018-2019/washington.csv")
+brush18 <- read.csv("Data_for_Zack/2018-2019/brush.csv")
+cement18 <- read.csv("Data_for_Zack/2018-2019/cement.csv")
+gothic18 <- read.csv("Data_for_Zack/2018-2019/gothic.csv")
+kebler18 <- read.csv("Data_for_Zack/2018-2019/kebler.csv")
+slate18 <- read.csv("Data_for_Zack/2018-2019/slate.csv")
+snodgrass18 <- read.csv("Data_for_Zack/2018-2019/snodgrass.csv")
+washington18 <- read.csv("Data_for_Zack/2018-2019/washington.csv")
 trailheads1819 <- bind_rows(list(brush18,cement18, gothic18, kebler18, slate18, snodgrass18, washington18))
 trailheads1819$Date <- ymd(trailheads1819$Date)
 trailheads1819 <- trailheads1819 %>% rename(date = Date)
 
 
 
-brush19 <- read_csv("Data_for_Zack/2019-2020/brush.csv")
-cement19 <- read_csv("Data_for_Zack/2019-2020/cement.csv")
-gothic19 <- read_csv("Data_for_Zack/2019-2020/gothic.csv")
-kebler19 <- read_csv("Data_for_Zack/2019-2020/kebler.csv")
-slate19 <- read_csv("Data_for_Zack/2019-2020/slate.csv")
-snodgrass19 <- read_csv("Data_for_Zack/2019-2020/snodgrass.csv")
-washington19 <- read_csv("Data_for_Zack/2019-2020/washington.csv")
+brush19 <- read.csv("Data_for_Zack/2019-2020/brush.csv")
+cement19 <- read.csv("Data_for_Zack/2019-2020/cement.csv")
+gothic19 <- read.csv("Data_for_Zack/2019-2020/gothic.csv")
+kebler19 <- read.csv("Data_for_Zack/2019-2020/kebler.csv")
+slate19 <- read.csv("Data_for_Zack/2019-2020/slate.csv")
+snodgrass19 <- read.csv("Data_for_Zack/2019-2020/snodgrass.csv")
+washington19 <- read.csv("Data_for_Zack/2019-2020/washington.csv")
 trailheads1920 <- bind_rows(list(brush19, cement19, gothic19, kebler19, slate19, snodgrass19, washington19))
 
 ## Load CAIC data
 
 # Add. changes: remove spaces
 
-caic17 <- read_csv("Data_for_Zack/CAIC_Data_2017-2020/caic2017.csv")
-caic18 <- read_csv("Data_for_Zack/CAIC_Data_2017-2020/caic2018.csv")
-caic19 <- read_csv("Data_for_Zack/CAIC_Data_2017-2020/caic2019.csv")
+caic17 <- read.csv("Data_for_Zack/CAIC_Data_2017-2020/caic2017.csv")
+caic18 <- read.csv("Data_for_Zack/CAIC_Data_2017-2020/caic2018.csv")
+caic19 <- read.csv("Data_for_Zack/CAIC_Data_2017-2020/caic2019.csv")
 
 caic18$date <- date(caic18$date_time)
 caic18 <- caic18 %>% group_by(date) %>%
@@ -73,9 +73,9 @@ caic18 <- caic18 %>% group_by(date) %>%
 
 # Add. changes: simplify headers
 
-snotel17 <- read_csv("Data_for_Zack/SNOTEL_2017-2020/snotel1718.csv", skip = 6)
-snotel18 <- read_csv("Data_for_Zack/SNOTEL_2017-2020/snotel1819.csv", skip = 7)
-snotel19 <- read_csv("Data_for_Zack/SNOTEL_2017-2020/snotel1920.csv", skip = 6)
+snotel17 <- read.csv("Data_for_Zack/SNOTEL_2017-2020/snotel1718.csv", skip = 6)
+snotel18 <- read.csv("Data_for_Zack/SNOTEL_2017-2020/snotel1819.csv", skip = 7)
+snotel19 <- read.csv("Data_for_Zack/SNOTEL_2017-2020/snotel1920.csv", skip = 6)
 
 ## Create lag variables for snowfall/ melt
 
