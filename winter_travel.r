@@ -56,7 +56,7 @@ trailheads1920 <- bind_rows(list(brush19, cement19, gothic19, kebler19, slate19,
 # Add. changes: remove spaces
 
 caic17 <- read.csv("Data_for_Zack/CAIC_Data_2017-2020/caic2017.csv")
-caic18 <- read.csv("Data_for_Zack/CAIC_Data_2017-2020/caic2018.csv")
+caic18 <- read_csv("Data_for_Zack/CAIC_Data_2017-2020/caic2018.csv")
 caic19 <- read.csv("Data_for_Zack/CAIC_Data_2017-2020/caic2019.csv")
 
 caic18$date <- date(caic18$date_time)
@@ -74,7 +74,7 @@ caic18 <- caic18 %>% group_by(date) %>%
 # Add. changes: simplify headers
 
 snotel17 <- read.csv("Data_for_Zack/SNOTEL_2017-2020/snotel1718.csv", skip = 6)
-snotel18 <- read.csv("Data_for_Zack/SNOTEL_2017-2020/snotel1819.csv", skip = 7)
+snotel18 <- read_csv("Data_for_Zack/SNOTEL_2017-2020/snotel1819.csv", skip = 7)
 snotel19 <- read.csv("Data_for_Zack/SNOTEL_2017-2020/snotel1920.csv", skip = 6)
 
 ## Create lag variables for snowfall/ melt
@@ -108,7 +108,7 @@ winter1819 <- pivot_longer(winter1819,
                            names_to = "modality", values_to = "user.count")
 winter1819$modality <- factor(winter1819$modality)
 
-winter1920 <- pivot_longer(winter1819, 
+winter1920 <- pivot_longer(winter19120, 
                            c("Non.motorized", "Mechanized", "Motorized", "Hybrid"), 
                            names_to = "modality", values_to = "user.count")
 winter1920$modality <- factor(winter1819$modality)
@@ -129,6 +129,12 @@ summary(winter1819)
 ggplot(winter1819, aes(change_depth, user.count, color = Trailhead))+
   geom_jitter(height = 0, width = 0.2, alpha = 0.5)+
   facet_wrap(vars(modality))
+
+ggplot(winter1819, aes(change_depth, user.count, color = rating_near))+
+  geom_jitter(height = 0, width = 0.2, alpha = 0.7)+
+  scale_color_manual(values = c("green", "yellow", "orange", "red"))+
+  scale_y_log10()+
+  facet_grid(modality~Trailhead)
 
 ggplot(winter1819, aes(past3snow, user.count, color = rating_near))+
   geom_jitter(height = 0, width = 0.2, alpha = 0.7)+
