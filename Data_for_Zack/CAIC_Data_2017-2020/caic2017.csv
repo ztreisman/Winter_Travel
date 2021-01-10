@@ -1,4 +1,4 @@
-date,rating above,rating near,rating below 
+date_time,rating_above,rating_near,rating_below 
 2017-12-21T06:42:00,2,2,1
 2017-12-22T06:55:00,2,2,1
 2017-12-22T07:06:00,2,2,1

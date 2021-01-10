@@ -1,10 +1,11 @@
 # Butte (380) ,b,c,d,e,f,g
 # Colorado  SNOTEL Site - 10160 ft,,,,,,
-# Reporting Frequency: Daily; Date Range: 2017-12-21 to 2018-04-16,,,,,,
+# Reporting Frequency: Daily, Date Range: 2017-12-21 to 2018-04-16,,,,,
 #,,,,,,
 # As of: Sep 22, 2020 9:40:05 AM GMT-08:00,,,,,
 #,,,,,,
 Date,Snow Water Equivalent (in) Start of Day Values,Change In Snow Water Equivalent (in),Snow Depth (in) Start of Day Values,Change In Snow Depth (in),Air Temperature Average (degF),Snow Density (pct) Start of Day Values
+date,swe,change_swe,snow_depth,change_depth,air_temp,snow_density
 2017-12-21,2,0,8,0,22,25
 2017-12-22,2,0,11,3,17,18.2
 2017-12-23,2.1,0.1,10,-1,21,21
