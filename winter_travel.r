@@ -160,6 +160,7 @@ winter1819$year <- "w1819"
 winter1920$year <- "w1920"
 
 winter_travel <- bind_rows(list(winter1718,winter1819,winter1920))
+winter_travel$year <- factor(winter_travel$year)
 
 ## Fix some capitalization issues 
 
@@ -179,11 +180,15 @@ winter_travel$modality <- factor(winter_travel$modality)
 ## Add some variables
 
 winter_travel$week <- factor(wday(winter_travel$date), labels = c("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"))
-winter_travel$weekend <- ifelse(winter_travel$week %in% c("Sat", "Sun"), "weekend", "weekday")
+winter_travel$weekend <- factor(ifelse(winter_travel$week %in% c("Sat", "Sun"), "weekend", "weekday"))
 
 ## Summaries to check reasonableness
 
 summary(winter_travel)
+
+## Save the data to csv
+
+write.csv(winter_travel, file = "data/winter_travel.csv")
 
 #  1. How do trail visitor counts correlate to an increase in snowfall during the previous day(s)? 
 #     (what patterns of snowfall yield the most visitors/changes in visitation)
