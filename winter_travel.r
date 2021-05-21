@@ -3,7 +3,7 @@
 ## Winter Travel Data Collection Initiative
 ## Zack Treisman
 ## 12/7/20
-## modified 1/11/21
+## modified 4/26/21
 ##
 #############
 
@@ -304,9 +304,12 @@ ggplot(all_users, aes(lag4snow, user.count, color = rating_near))+
 pairs(winter_travel[,c("change_depth","past2snow","past3snow","past4snow","past5snow")])
 pairs(winter_travel[,c("change_depth","lag2snow","lag3snow","lag4snow")])
 
+ggplot(winter_travel, aes(change_depth, lag1snow))+geom_jitter(alpha=0.1)
+ggplot(winter_travel, aes(change_depth, past2snow))+geom_jitter(alpha=0.1)
+
 # Poisson models
 
-glm0 <- glm(user.count ~ 1, data=all_users)
+glm0 <- glm(user.count ~ 1, data=all_users, family=poisson)
 summary(glm0)
 
 glm1 <- glm(user.count ~ change_depth+lag3snow+air_temp, family = poisson, data=all_users)
