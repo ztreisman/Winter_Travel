@@ -1,0 +1,191 @@
+---
+title: "Winter Travel Data Project"
+author: "Zack Treisman"
+date: "5/27/2021"
+output: beamer_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+library(tidyverse)
+library(lubridate)
+library(MASS)
+
+by_zone <- read.csv("data/by_zone.csv")
+by_zone$rating_below <- factor(by_zone$rating_below)
+by_zone$rating_near <- factor(by_zone$rating_near)
+by_zone$rating_above <- factor(by_zone$rating_above)
+by_zone$modality <- factor(by_zone$modality, levels = c("Non.motorized", "Mechanized", "Hybrid", "Motorized"))
+by_zone$Zone <- factor(by_zone$Zone, levels = c("Kebler", "Slate River Rd", "Washington Gulch", "East River", "Brush/Cement"))
+```
+
+
+#  New snow
+
+Most of the patterns in the data relate to user group preferences that don't change much year to year or depending on conditions.
+
+```{r fig.height=5}
+ggplot(by_zone, aes(change_depth, user.count, color = Zone))+
+  geom_jitter(height = 0, width = 0.2, alpha = 0.5)+
+  facet_grid(modality~year)+
+  scale_y_log10()+
+  labs(x="New Snow (cm)", y="# Users")
+```
+
+#  Snow in past 3 days
+
+Motorized users head to Kebler, non-motorized users to Snodgrass. Some shift in these patterns year to year is visible.
+
+```{r,fig.height=5}
+ggplot(by_zone, aes(past3snow, user.count, color = Zone))+
+  geom_jitter(height = 0, width = 0.2, alpha = 0.5)+
+  facet_grid(modality~year)+
+  scale_y_log10()+
+  labs(x="Past 3 Days Snow (cm)", y="# Users")
+```
+
+#  Air Temperature
+
+Effects of weather and conditions are subtle but not absent.
+
+```{r,fig.height=5}
+ggplot(by_zone, aes(air_temp, user.count, color = Zone))+
+  geom_jitter(height = 0, width = 0.2, alpha = 0.5)+
+  facet_grid(modality~year)+
+  scale_y_log10()+
+  labs(x="Air Temperature (C)", y="# Users")
+```
+
+
+#  CAIC Rating (Near Treeline)
+
+Most activity involving avalanche prone slopes happens near treeline.
+
+```{r, echo=FALSE}
+ggplot(na.omit(by_zone), aes(rating_near, user.count, fill=rating_near))+
+  geom_jitter(aes(color=rating_near))+
+  geom_boxplot(outlier.shape = NA)+
+  scale_y_log10()+
+  facet_grid(has_sled~Zone)+
+  scale_fill_manual(values = c("green", "yellow", "orange", "red"))+
+  scale_color_manual(values = c("green", "yellow", "orange", "red"),guide=FALSE)+
+  labs(x="", y="# Users", fill="CAIC Rating\n(Near Treeline)")
+
+```
+
+
+# Effects of weather and danger rating on visitation rates
+
+\scriptsize
+
+```{r}
+model1 <- glm.nb(user.count ~ modality*(Zone+rating_near)+air_temp+change_depth+snow_depth+snow_density+weekend, data=by_zone)
+anova(model1)
+#summary(model1)
+weather_ests <- exp(coef(model1)[c("snow_depth", "change_depth", "snow_density","air_temp")])
+rating_ests <- exp(coef(model1)[c("rating_near2", "rating_near3", "rating_near4")])  
+highD_ests <- exp(coef(model1)[c("modalityMechanized:rating_near4","modalityHybrid:rating_near4")]) 
+m1_CI <- confint(model1)
+weather_confs <- exp(m1_CI[c("snow_depth", "change_depth", "snow_density", "air_temp"),])
+rating_confs <- exp(m1_CI[c("rating_near2", "rating_near3", "rating_near4"),])
+highD_confs <- exp(m1_CI[c("modalityMechanized:rating_near4","modalityHybrid:rating_near4"),])
+```
+
+#  Weather and Snow Conditions
+
+Colder temperatures, heavy snow, new snow, and a deep snowpack correlate with decreased visitation. Effects are relatively minor.
+
+```{r, fig.height=5}
+weather_model <- data.frame(var.labels=factor(names(weather_ests), levels=names(weather_ests)), weather_ests, 
+                        low95 = weather_confs[,1], up95 = weather_confs[,2])
+ggplot(weather_model, aes(var.labels, weather_ests))+
+  geom_pointrange(aes(ymin=low95, ymax=up95))+
+  geom_hline(yintercept=1, linetype = "dashed", color = "red")+
+  labs(x = "", y =  "Expected User Count Multiplier per Unit Change")+ coord_flip()
+```
+
+#  CAIC Rating (Near Treeline)
+
+Moderate and considerable ratings correlate some with decreased visitation. High danger has more correlation.
+
+```{r, fig.height=5}
+rating_model <- data.frame(var.labels=factor(names(rating_ests), levels=names(rating_ests)), rating_ests, 
+                        low95 = rating_confs[,1], up95 = rating_confs[,2])
+ggplot(rating_model, aes(var.labels, rating_ests))+
+  geom_pointrange(aes(ymin=low95, ymax=up95))+
+  geom_hline(yintercept=1, linetype = "dashed", color = "red")+
+  labs(x = "", y =  "Expected User Count Multiplier")+ coord_flip()
+```
+
+#  High ratings and modality
+
+For Mechanized and Hybrid users, the effects of high danger ratings are amplified.
+
+```{r, fig.height=5}
+highD_model <- data.frame(var.labels=factor(names(highD_ests), levels=names(highD_ests)), highD_ests, 
+                        low95 = highD_confs[,1], up95 = highD_confs[,2])
+ggplot(highD_model, aes(var.labels, highD_ests))+
+  geom_pointrange(aes(ymin=low95, ymax=up95))+
+  geom_hline(yintercept=1, linetype = "dashed", color = "red")+
+  labs(x = "", y =  "Expected User Count Multiplier")+ coord_flip()
+
+```
+
+
+#  Season to season trends
+
+Usage has remained fairly stable.
+
+```{r, fig.height=5}
+ggplot(by_zone, aes(year, user.count))+
+  geom_jitter(height = 0, width = 0.2, alpha = 0.7)+
+  geom_boxplot()+
+  facet_grid(~modality)+
+  scale_y_log10()
+```
+
+
+#  Within season trends
+
+There is a jump in usage in the last week of the calendar year, otherwise we see a gradual increase until sometime mid March.
+
+```{r, fig.height=5}
+day_totals <- by_zone %>% 
+  group_by(date, weekend) %>%
+  summarise(users = sum(user.count, na.rm = TRUE)) %>%
+  arrange(desc(users))
+
+#head(day_totals, 10)
+
+ggplot(day_totals, aes((yday(date)+30)%%365, users))+
+  geom_smooth(span=0.3)+
+  geom_point(aes(color=weekend))+
+  scale_x_continuous(breaks = c(0,31,62,90,120), 
+                     labels = c("Dec 1", "Jan 1", "Feb 1", "Mar 1", "Apr 1"))+
+  labs(x="")
+```
+
+
+
+#  Within season trends by user type
+
+Variance is greater in the non-motorized groups, and the mid March peak is more pronounced for motorized and hybrid users.
+
+```{r, fig.height=5}
+day_totals_modes <- by_zone %>% 
+  group_by(date, weekend, has_sled) %>%
+  summarise(users = sum(user.count, na.rm = TRUE)) %>%
+  arrange(desc(users))
+
+ggplot(day_totals_modes, aes((yday(date)+30)%%365, users))+
+  geom_point(aes(color=weekend))+
+   geom_smooth(span=0.4)+
+  scale_x_continuous(breaks = c(0,31,62,90,120), 
+                     labels = c("Dec 1", "Jan 1", "Feb 1", "Mar 1", "Apr 1"))+
+  #scale_y_log10()+
+  labs(x="")+
+  facet_grid(~has_sled)
+```
+
+
+

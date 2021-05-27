@@ -17,6 +17,7 @@ library(gam)
 library(pscl)
 library(mgcv)
 library(glmmTMB)
+library(glarma)
 
 # Load trailhead data
 
@@ -33,14 +34,14 @@ library(glmmTMB)
 
 # 2019-12-10 was entered as 2020
 
-brush17 <- read.csv("Data_for_Zack/2017-2018/brush.csv")
-brush_rd17 <- read.csv("Data_for_Zack/2017-2018/brush_rd.csv")
-cement17 <- read.csv("Data_for_Zack/2017-2018/cement.csv")
-gothic17 <- read.csv("Data_for_Zack/2017-2018/gothic.csv")
-kebler17 <- read.csv("Data_for_Zack/2017-2018/kebler.csv")
-slate17 <- read.csv("Data_for_Zack/2017-2018/slate.csv")
-snodgrass17 <- read.csv("Data_for_Zack/2017-2018/snodgrass.csv")
-washington17 <- read.csv("Data_for_Zack/2017-2018/washington.csv")
+brush17 <- read.csv("Data_for_R/2017-2018/brush.csv")
+brush_rd17 <- read.csv("Data_for_R/2017-2018/brush_rd.csv")
+cement17 <- read.csv("Data_for_R/2017-2018/cement.csv")
+gothic17 <- read.csv("Data_for_R/2017-2018/gothic.csv")
+kebler17 <- read.csv("Data_for_R/2017-2018/kebler.csv")
+slate17 <- read.csv("Data_for_R/2017-2018/slate.csv")
+snodgrass17 <- read.csv("Data_for_R/2017-2018/snodgrass.csv")
+washington17 <- read.csv("Data_for_R/2017-2018/washington.csv")
 
 brush17$Hybrid <- NA
 
@@ -53,13 +54,13 @@ trailheads1718 <- trailheads1718 %>% rename(date = Date)
 
 
 
-brush18 <- read.csv("Data_for_Zack/2018-2019/brush.csv")
-cement18 <- read.csv("Data_for_Zack/2018-2019/cement.csv")
-gothic18 <- read.csv("Data_for_Zack/2018-2019/gothic.csv")
-kebler18 <- read.csv("Data_for_Zack/2018-2019/kebler.csv")
-slate18 <- read.csv("Data_for_Zack/2018-2019/slate.csv")
-snodgrass18 <- read.csv("Data_for_Zack/2018-2019/snodgrass.csv")
-washington18 <- read.csv("Data_for_Zack/2018-2019/washington.csv")
+brush18 <- read.csv("Data_for_R/2018-2019/brush.csv")
+cement18 <- read.csv("Data_for_R/2018-2019/cement.csv")
+gothic18 <- read.csv("Data_for_R/2018-2019/gothic.csv")
+kebler18 <- read.csv("Data_for_R/2018-2019/kebler.csv")
+slate18 <- read.csv("Data_for_R/2018-2019/slate.csv")
+snodgrass18 <- read.csv("Data_for_R/2018-2019/snodgrass.csv")
+washington18 <- read.csv("Data_for_R/2018-2019/washington.csv")
 trailheads1819 <- bind_rows(list(brush18,cement18, gothic18, kebler18, 
                                  slate18, snodgrass18, washington18))
 trailheads1819$Date <- parse_date_time(trailheads1819$Date, 
@@ -68,20 +69,15 @@ trailheads1819 <- trailheads1819 %>% rename(date = Date)
 
 
 
-brush19 <- read.csv("Data_for_Zack/2019-2020/brush.csv")
-cement19 <- read.csv("Data_for_Zack/2019-2020/cement.csv")
-gothic19 <- read.csv("Data_for_Zack/2019-2020/gothic.csv")
-kebler19 <- read.csv("Data_for_Zack/2019-2020/kebler.csv")
-slate19 <- read.csv("Data_for_Zack/2019-2020/slate.csv")
-snodgrass19 <- read.csv("Data_for_Zack/2019-2020/snodgrass.csv")
-washington19 <- read.csv("Data_for_Zack/2019-2020/washington.csv")
+brush_rd19 <- read.csv("Data_for_R/2019-2020/brush_rd.csv")
+cement19 <- read.csv("Data_for_R/2019-2020/cement.csv")
+gothic19 <- read.csv("Data_for_R/2019-2020/gothic.csv")
+kebler19 <- read.csv("Data_for_R/2019-2020/kebler.csv")
+slate19 <- read.csv("Data_for_R/2019-2020/slate.csv")
+snodgrass19 <- read.csv("Data_for_R/2019-2020/snodgrass.csv")
+washington19 <- read.csv("Data_for_R/2019-2020/washington.csv")
 
-kebler19$Hybrid<-NA
-slate19$Hybrid<-NA
-snodgrass19$Hybrid<-NA
-snodgrass19$Motorized<-NA
-
-trailheads1920 <- bind_rows(list(brush19, cement19, gothic19, kebler19, 
+trailheads1920 <- bind_rows(list(brush_rd19, cement19, gothic19, kebler19, 
                                  slate19, snodgrass19, washington19))
 trailheads1920$Date <- parse_date_time(trailheads1920$Date, 
                                        orders = c("ymd", "mdy"))
@@ -121,7 +117,7 @@ trailheads$week <- factor(wday(trailheads$date),
 trailheads$weekend <- factor(ifelse(trailheads$week %in% c("Sat", "Sun"), 
                                     "weekend", "weekday"))
 
-trailheads$has_sled <- trailheads$modality %in% c("Hybrid", "Motorized")
+trailheads$has_sled <- factor(ifelse(trailheads$modality %in% c("Hybrid", "Motorized"), "sled", "no_sled"))
 
 ## Collapse by user group and location
 
@@ -142,10 +138,10 @@ all_users <- trailheads %>%
 
 # Add. changes: change spaces to underscores, date to date_time
 
-caic17 <- read_csv("Data_for_Zack/CAIC_Data_2017-2020/caic2017.csv")
+caic17 <- read_csv("Data_for_R/CAIC_Data_2017-2020/caic2017.csv")
 caic17 <- caic17[-1,] # No other data for 2017-12-21
-caic18 <- read_csv("Data_for_Zack/CAIC_Data_2017-2020/caic2018.csv")
-caic19 <- read_csv("Data_for_Zack/CAIC_Data_2017-2020/caic2019.csv")
+caic18 <- read_csv("Data_for_R/CAIC_Data_2017-2020/caic2018.csv")
+caic19 <- read_csv("Data_for_R/CAIC_Data_2017-2020/caic2019.csv")
 
 caic17$date <- date(caic17$date_time)
 caic17 <- caic17 %>% group_by(date) %>%
@@ -181,10 +177,10 @@ caic <- bind_rows(list(caic17,caic18,caic19))
 
 # Add. changes: simplify headers
 
-snotel17 <- read_csv("Data_for_Zack/SNOTEL_2017-2020/snotel1718.csv", skip = 7)
+snotel17 <- read_csv("Data_for_R/SNOTEL_2017-2020/snotel1718.csv", skip = 7)
 snotel17 <- snotel17[-1,] # No other data for 2017-12-21
-snotel18 <- read_csv("Data_for_Zack/SNOTEL_2017-2020/snotel1819.csv", skip = 7)
-snotel19 <- read_csv("Data_for_Zack/SNOTEL_2017-2020/snotel1920.csv", skip = 7)
+snotel18 <- read_csv("Data_for_R/SNOTEL_2017-2020/snotel1819.csv", skip = 7)
+snotel19 <- read_csv("Data_for_R/SNOTEL_2017-2020/snotel1920.csv", skip = 7)
 
 ## Create lag variables for snowfall/ melt
 
@@ -312,15 +308,14 @@ ggplot(winter_travel, aes(change_depth, past2snow))+geom_jitter(alpha=0.1)
 glm0 <- glm(user.count ~ 1, data=all_users, family=poisson)
 summary(glm0)
 
-glm1 <- glm(user.count ~ change_depth+lag3snow+air_temp, family = poisson, data=all_users)
+glm1 <- glm(user.count ~ change_depth+lag3snow+air_temp+weekend, family = poisson, data=all_users)
 summary(glm1)
 hist(resid(glm1))
 confint(glm1)
 
-# AIC went way up adding predictors. Doesn't look like there's any correlation here.
-# According to the p-values, it looks like about a 2% decrease in users per cm of new snow.
+# Looks like about a 3% decrease in users per cm of new snow, but a 1.4% increase per cm of snow 4 days ago.
 # Also about an 0.5% increase in users per degC of air temp.
-# Recent snow variables are not even significant using p-values. 
+# Recent snow variables are not significant. 
 # If there is a trend, generally the more snow, the fewer people are out. 
 
 # Negative binomial models
@@ -328,15 +323,22 @@ confint(glm1)
 glm0nb <- glm.nb(user.count ~ weekend, data=all_users)
 summary(glm0nb)
 
-glm1nb <- glm.nb(user.count ~ change_depth+lag3snow+air_temp+weekend, data=all_users)
+glm1nb <- glm.nb(user.count ~ change_depth+past3snow+air_temp+weekend, data=all_users)
 summary(glm1nb)
 hist(resid(glm1nb))
 confint(glm1nb)
 
-# Again, looking at AIC, adding predictors gives a worse model. 
-# The coefficients agree with the poisson, but significance is gone.
 
-# Add AR1
+
+# AIC says this is better.
+
+acf(glm1nb$residuals)
+
+# Add AR
+
+y <- all_users[,"user.count"]
+X <- all
+
 
 glm2nbAR1 <- glmmTMB(user.count ~ change_depth+lag3snow+air_temp+weekend +ar1(date), data=all_users)
 summary(glm1nb)
@@ -346,17 +348,37 @@ confint(glm1nb)
 
 #  2. How does an increased avalanche risk impact the numbers of hybrid and motorized visitors to specific trailheads?
 
+table(winter_travel$rating_above, winter_travel$rating_near)
+table(winter_travel$rating_near, winter_travel$rating_below)
+table(winter_travel$rating_above,winter_travel$rating_below)
+
+
 ggplot(na.omit(winter_travel), aes(rating_near, user.count, color = Trailhead, fill = Trailhead))+
   geom_point(position=position_jitterdodge(jitter.width = 0.2))+
   geom_boxplot(color="black", outlier.shape = NA)+
   scale_y_log10()+
   facet_wrap(~has_sled)
 
-ggplot(na.omit(winter_travel), aes(rating_near, user.count))+
+ggplot(na.omit(winter_travel), aes(rating_below, user.count, fill=rating_below))+
   geom_jitter()+
   geom_boxplot(outlier.shape = NA)+
   scale_y_log10()+
-  facet_grid(has_sled~Trailhead)
+  facet_grid(has_sled~Trailhead)+
+  scale_fill_manual(values = c("green", "yellow", "orange", "red"))
+
+ggplot(na.omit(winter_travel), aes(rating_near, user.count, fill=rating_near))+
+  geom_jitter()+
+  geom_boxplot(outlier.shape = NA)+
+  scale_y_log10()+
+  facet_grid(has_sled~Trailhead)+
+  scale_fill_manual(values = c("green", "yellow", "orange", "red"))
+
+ggplot(na.omit(winter_travel), aes(rating_above, user.count, fill=rating_above))+
+  geom_jitter()+
+  geom_boxplot(outlier.shape = NA)+
+  scale_y_log10()+
+  facet_grid(has_sled~Trailhead)+
+  scale_fill_manual(values = c("green", "yellow", "orange", "red"))
 
 
 glm2 <- glm(user.count ~ Trailhead*rating_near, family = poisson, data=winter_travel[winter_travel$has_sled==TRUE,])
@@ -468,7 +490,7 @@ day_totals_modes <- all_locations %>%
 
 head(day_totals_modes, 10)
 
-ggplot(day_totals_modes, aes((yday(date)+30)%%365, users))+
+ggplot(day_totals_modes, aes((yday(date)+ifelse(date>ymd("2020-2-28"),31,30))%%ifelse(date>ymd("2020-2-28"),31,30)), users))+
   geom_smooth()+
   geom_point(aes(color=weekend))+
   scale_x_continuous(breaks = c(0,31,62,90,120), 
