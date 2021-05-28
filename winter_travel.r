@@ -3,7 +3,7 @@
 ## Winter Travel Data Collection Initiative
 ## Zack Treisman
 ## 12/7/20
-## modified 4/26/21
+## modified 5/27/21
 ##
 #############
 
@@ -42,8 +42,6 @@ kebler17 <- read.csv("Data_for_R/2017-2018/kebler.csv")
 slate17 <- read.csv("Data_for_R/2017-2018/slate.csv")
 snodgrass17 <- read.csv("Data_for_R/2017-2018/snodgrass.csv")
 washington17 <- read.csv("Data_for_R/2017-2018/washington.csv")
-
-brush17$Hybrid <- NA
 
 trailheads1718 <- bind_rows(list(brush17, brush_rd17,cement17, gothic17, 
                                  kebler17, slate17, snodgrass17, washington17))
@@ -84,13 +82,39 @@ trailheads1920$Date <- parse_date_time(trailheads1920$Date,
 trailheads1920 <- trailheads1920 %>% rename(date = Date)
 trailheads1920[trailheads1920$date=="2020-12-10 UTC",]$date
 
+brush20 <- read.csv("Data_for_R/2020-2021/brush.csv")
+brush20$Trailhead <- "Brush Creek Trailhead"
+brush_rd20 <- read.csv("Data_for_R/2020-2021/brush_rd.csv")
+brush_rd20$Trailhead <- "Brush Creek Rd"
+cement20 <- read.csv("Data_for_R/2020-2021/cement.csv")
+cement20$Trailhead <- "Cement Creek"
+gothic20 <- read.csv("Data_for_R/2020-2021/gothic.csv")
+gothic20$Trailhead <- "Gothic Rd"
+kebler20 <- read.csv("Data_for_R/2020-2021/kebler.csv")
+kebler20$Trailhead <- "Kebler"
+slate20 <- read.csv("Data_for_R/2020-2021/slate.csv")
+slate20$Trailhead <- "Slate River"
+snodgrass20 <- read.csv("Data_for_R/2020-2021/snodgrass.csv")
+snodgrass20$Trailhead <- "Snodgrass"
+washington20 <- read.csv("Data_for_R/2020-2021/washington.csv")
+washington20$Trailhead <- "Washington Gulch"
+
+trailheads2021 <- bind_rows(list(brush20, brush_rd20,cement20, gothic20, 
+                                 kebler20, slate20, snodgrass20, washington20))
+trailheads2021$Date <- parse_date_time(trailheads2021$Date, 
+                                       orders = c("ymd", "mdy"))
+trailheads2021 <- trailheads2021 %>% rename(date = Date)
+
+
+
 ## Join years
 
 trailheads1718$year <- "w1718"
 trailheads1819$year <- "w1819"
 trailheads1920$year <- "w1920"
+trailheads2021$year <- "w2021"
 
-trailheads <- bind_rows(list(trailheads1718,trailheads1819,trailheads1920))
+trailheads <- bind_rows(list(trailheads1718,trailheads1819,trailheads1920,trailheads2021))
 trailheads$year <- factor(trailheads$year)
 
 
@@ -107,7 +131,7 @@ trailheads <- droplevels(trailheads)
 trailheads <- pivot_longer(trailheads, 
                               c("Non.motorized", "Mechanized", "Motorized", "Hybrid"), 
                               names_to = "modality", values_to = "user.count")
-trailheads$modality <- factor(trailheads$modality)
+trailheads$modality <- factor(trailheads$modality, levels = c("Non.motorized", "Mechanized", "Hybrid", "Motorized"))
 
 
 ## Add some variables
@@ -119,11 +143,22 @@ trailheads$weekend <- factor(ifelse(trailheads$week %in% c("Sat", "Sun"),
 
 trailheads$has_sled <- factor(ifelse(trailheads$modality %in% c("Hybrid", "Motorized"), "sled", "no_sled"))
 
+## Combine like trailheads
+
+trailheads$Zone <- recode(trailheads$Trailhead, 
+                            "c('Brush Creek Trailhead', 'Brush Creek Rd', 'Cement Creek')='Brush/Cement'; 
+                            c('Snodgrass', 'Gothic Rd')='East River'")
+trailheads$Zone <- factor(trailheads$Zone, levels = c("Kebler", "Slate River Rd", "Washington Gulch", "East River", "Brush/Cement"))           
+
 ## Collapse by user group and location
 
 
 all_modes <- trailheads %>% 
   group_by(date, Trailhead, year, week, weekend, has_sled) %>%
+  summarize(user.count = sum(user.count, na.rm = TRUE))
+
+by_zone <- trailheads %>% 
+  group_by(date, modality, year, week, weekend, has_sled, Zone) %>%
   summarize(user.count = sum(user.count, na.rm = TRUE))
 
 all_locations <- trailheads %>% 
@@ -181,6 +216,7 @@ snotel17 <- read_csv("Data_for_R/SNOTEL_2017-2020/snotel1718.csv", skip = 7)
 snotel17 <- snotel17[-1,] # No other data for 2017-12-21
 snotel18 <- read_csv("Data_for_R/SNOTEL_2017-2020/snotel1819.csv", skip = 7)
 snotel19 <- read_csv("Data_for_R/SNOTEL_2017-2020/snotel1920.csv", skip = 7)
+snotel20 <- read_csv("Data_for_R/SNOTEL_2017-2020/snotel2021.csv", skip = 7)
 
 ## Create lag variables for snowfall/ melt
 
@@ -211,12 +247,22 @@ snotel19 <- snotel19 %>%
          past3snow = past2snow+lag2snow,
          past4snow = past3snow+lag3snow,
          past5snow = past4snow+lag4snow)
+snotel20 <- snotel20 %>% 
+  mutate(lag1snow = lag(change_depth, default = 0),
+         lag2snow = lag(change_depth, n=2, default = 0),
+         lag3snow = lag(change_depth, n=3, default = 0),
+         lag4snow = lag(change_depth, n=4, default = 0),
+         past2snow = change_depth+lag1snow,
+         past3snow = past2snow+lag2snow,
+         past4snow = past3snow+lag3snow,
+         past5snow = past4snow+lag4snow)
 
-snotel <- bind_rows(list(snotel17,snotel18,snotel19))
+snotel <- bind_rows(list(snotel17,snotel18,snotel19, snotel20))
 
 ## Merge data
 
 winter_travel <- list(trailheads, caic, snotel) %>% reduce(full_join, by="date")
+by_zone <- list(by_zone, caic, snotel) %>% reduce(full_join, by="date")
 all_locations <- list(all_locations, caic, snotel) %>% reduce(full_join, by="date")
 all_modes <- list(all_modes, caic, snotel) %>% reduce(full_join, by="date")
 all_users <- list(all_users, caic, snotel) %>% reduce(full_join, by="date")
@@ -224,6 +270,7 @@ all_users <- list(all_users, caic, snotel) %>% reduce(full_join, by="date")
 ## Summaries to check reasonableness
 
 summary(winter_travel)
+summary(by_zone)
 summary(all_modes)
 summary(all_locations)
 summary(all_users)
@@ -242,6 +289,7 @@ mean(all_users$user.count==0, na.rm=T)
 ## Save the data to csv
 
 write.csv(winter_travel, file = "data/winter_travel.csv")
+write.csv(by_zone, file="data/by_zone.csv")
 write.csv(all_modes, file="data/all_modes.csv")
 write.csv(all_locations, file = "data/all_locations.csv")
 write.csv(all_users, file="data/all_users.csv")
@@ -253,6 +301,12 @@ ggplot(winter_travel, aes(change_depth, user.count, color = Trailhead))+
   geom_jitter(height = 0, width = 0.2, alpha = 0.5)+
   facet_grid(modality~year)+
   scale_y_log10()
+
+ggplot(by_zone, aes(change_depth, user.count, color = Zone))+
+  geom_jitter(height = 0, width = 0.2, alpha = 0.5)+
+  facet_grid(modality~year)+
+  scale_y_log10()+
+  labs(x="New Snow (cm)", y="# Users")
 
 ggplot(winter_travel, aes(change_depth, user.count, color = rating_near))+
   geom_jitter(height = 0, width = 0.2, alpha = 0.7)+
@@ -323,7 +377,7 @@ confint(glm1)
 glm0nb <- glm.nb(user.count ~ weekend, data=all_users)
 summary(glm0nb)
 
-glm1nb <- glm.nb(user.count ~ change_depth+past3snow+air_temp+weekend, data=all_users)
+glm1nb <- glm.nb(user.count ~ change_depth+lag1snow+air_temp+weekend, data=all_users)
 summary(glm1nb)
 hist(resid(glm1nb))
 confint(glm1nb)
@@ -336,8 +390,13 @@ acf(glm1nb$residuals)
 
 # Add AR
 
-y <- all_users[,"user.count"]
-X <- all
+y <- all_users$user.count
+X <- as.matrix(all_users[,c("snow_depth", "change_depth",
+                            "air_temp", "lag1snow")])
+glarma_mod <- glarma(y,X,type="NegBin", thetaLags = 7)
+summary(glarma_mod)
+plot(glarma_mod)
+
 
 
 glm2nbAR1 <- glmmTMB(user.count ~ change_depth+lag3snow+air_temp+weekend +ar1(date), data=all_users)

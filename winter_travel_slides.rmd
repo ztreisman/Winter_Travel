@@ -29,7 +29,7 @@ ggplot(by_zone, aes(change_depth, user.count, color = Zone))+
   geom_jitter(height = 0, width = 0.2, alpha = 0.5)+
   facet_grid(modality~year)+
   scale_y_log10()+
-  labs(x="New Snow (cm)", y="# Users")
+  labs(x="New Snow (in)", y="# Users")
 ```
 
 #  Snow in past 3 days
@@ -41,19 +41,19 @@ ggplot(by_zone, aes(past3snow, user.count, color = Zone))+
   geom_jitter(height = 0, width = 0.2, alpha = 0.5)+
   facet_grid(modality~year)+
   scale_y_log10()+
-  labs(x="Past 3 Days Snow (cm)", y="# Users")
+  labs(x="Past 3 Days Snow (in)", y="# Users")
 ```
 
 #  Air Temperature
 
-Effects of weather and conditions are subtle but not absent.
+Effects of weather and conditions are subtle but not absent. People around here are not too fazed by the cold.
 
 ```{r,fig.height=5}
 ggplot(by_zone, aes(air_temp, user.count, color = Zone))+
   geom_jitter(height = 0, width = 0.2, alpha = 0.5)+
   facet_grid(modality~year)+
   scale_y_log10()+
-  labs(x="Air Temperature (C)", y="# Users")
+  labs(x="Air Temperature (F)", y="# Users")
 ```
 
 
@@ -79,7 +79,9 @@ ggplot(na.omit(by_zone), aes(rating_near, user.count, fill=rating_near))+
 \scriptsize
 
 ```{r}
-model1 <- glm.nb(user.count ~ modality*(Zone+rating_near)+air_temp+change_depth+snow_depth+snow_density+weekend, data=by_zone)
+model1 <- glm.nb(user.count ~ modality*(Zone+rating_near)+air_temp+change_depth+
+                   snow_depth+snow_density+weekend, 
+                 data=by_zone)
 anova(model1)
 #summary(model1)
 weather_ests <- exp(coef(model1)[c("snow_depth", "change_depth", "snow_density","air_temp")])
@@ -134,7 +136,7 @@ ggplot(highD_model, aes(var.labels, highD_ests))+
 
 #  Season to season trends
 
-Usage has remained fairly stable.
+Usage has remained fairly stable, with a definite uptick in non-motorized usage this past season.
 
 ```{r, fig.height=5}
 ggplot(by_zone, aes(year, user.count))+
@@ -144,6 +146,20 @@ ggplot(by_zone, aes(year, user.count))+
   scale_y_log10()
 ```
 
+# Season to season trends by user type
+
+Motorized users head to Kebler in increasing numbers, and there were a lot more non-motorized users last year.
+
+```{r, fig.height=5}
+year_totals <- by_zone %>%
+  group_by(year, Zone, modality) %>%
+  summarise(users = sum(user.count, na.rm = TRUE))
+ggplot(year_totals, aes(year, users, fill=modality))+
+  geom_col()+
+  facet_grid(~Zone)+
+  theme(axis.text.x=element_text(angle=60, hjust=1))+
+  scale_fill_hue(direction=-1)
+```
 
 #  Within season trends
 
