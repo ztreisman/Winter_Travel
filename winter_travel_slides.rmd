@@ -59,9 +59,9 @@ ggplot(by_zone, aes(air_temp, user.count, color = Zone))+
 
 #  CAIC Rating (Near Treeline)
 
-Most activity involving avalanche prone slopes happens near treeline.
+Most activity involving avalanche prone slopes happens near treeline. Using above and below treeline ratings shows similar patterns. 
 
-```{r, echo=FALSE}
+```{r, fig.height=5}
 ggplot(na.omit(by_zone), aes(rating_near, user.count, fill=rating_near))+
   geom_jitter(aes(color=rating_near))+
   geom_boxplot(outlier.shape = NA)+
@@ -121,7 +121,7 @@ ggplot(rating_model, aes(var.labels, rating_ests))+
 
 #  High ratings and modality
 
-For Mechanized and Hybrid users, the effects of high danger ratings are amplified.
+For mechanized and hybrid users, the effects of high danger ratings are amplified.
 
 ```{r, fig.height=5}
 highD_model <- data.frame(var.labels=factor(names(highD_ests), levels=names(highD_ests)), highD_ests, 
@@ -134,7 +134,7 @@ ggplot(highD_model, aes(var.labels, highD_ests))+
 ```
 
 
-#  Season to season trends
+#  Season to season trends by user type
 
 Usage has remained fairly stable, with a definite uptick in non-motorized usage this past season.
 
@@ -143,10 +143,11 @@ ggplot(by_zone, aes(year, user.count))+
   geom_jitter(height = 0, width = 0.2, alpha = 0.7)+
   geom_boxplot()+
   facet_grid(~modality)+
-  scale_y_log10()
+  scale_y_log10()+
+  labs(x="Year", y="# Users")
 ```
 
-# Season to season trends by user type
+# Season to season trends by user type and location
 
 Motorized users head to Kebler in increasing numbers, and there were a lot more non-motorized users last year.
 
@@ -158,7 +159,8 @@ ggplot(year_totals, aes(year, users, fill=modality))+
   geom_col()+
   facet_grid(~Zone)+
   theme(axis.text.x=element_text(angle=60, hjust=1))+
-  scale_fill_hue(direction=-1)
+  scale_fill_hue(direction=-1)+
+  labs(x="Year", y="# Users")
 ```
 
 #  Within season trends
@@ -178,7 +180,8 @@ ggplot(day_totals, aes((yday(date)+30)%%365, users))+
   geom_point(aes(color=weekend))+
   scale_x_continuous(breaks = c(0,31,62,90,120), 
                      labels = c("Dec 1", "Jan 1", "Feb 1", "Mar 1", "Apr 1"))+
-  labs(x="")
+  labs(x="", y="# Users")+
+  ylim(0,NA)
 ```
 
 
@@ -199,8 +202,9 @@ ggplot(day_totals_modes, aes((yday(date)+30)%%365, users))+
   scale_x_continuous(breaks = c(0,31,62,90,120), 
                      labels = c("Dec 1", "Jan 1", "Feb 1", "Mar 1", "Apr 1"))+
   #scale_y_log10()+
-  labs(x="")+
-  facet_grid(~has_sled)
+  labs(x="", y="# Users")+
+  facet_grid(~has_sled)+
+  ylim(0,NA)
 ```
 
 

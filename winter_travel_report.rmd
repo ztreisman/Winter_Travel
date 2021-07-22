@@ -1,0 +1,245 @@
+---
+title: "Winter Travel Data Project"
+author: "Zack Treisman"
+date: "7/21/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+library(tidyverse)
+library(lubridate)
+library(MASS)
+
+by_zone <- read.csv("data/by_zone.csv")
+by_zone$rating_below <- factor(by_zone$rating_below)
+by_zone$rating_near <- factor(by_zone$rating_near)
+by_zone$rating_above <- factor(by_zone$rating_above)
+by_zone$modality <- factor(by_zone$modality, levels = c("Non.motorized", "Mechanized", "Hybrid", "Motorized"), labels = c("Non.motor", "Mechanized", "Hybrid", "Motorized"))
+by_zone$Zone <- factor(by_zone$Zone, levels = c("Kebler", "Slate River Rd", "Washington Gulch", "East River", "Brush/Cement"), labels = c("Kebler", "Slate River", "Wash. Gulch", "East River", "Brush/Cement"))
+by_zone$weekend <- factor(by_zone$weekend)
+by_zone$year <- factor(by_zone$year)
+by_zone$has_sled <- factor(by_zone$has_sled)
+```
+
+# Data
+
+Data come from three sources: Trail cameras at trailheads used for winter recreation, published CAIC danger ratings, and weather and snow observations from SNOTEL site Butte (380). The primary variable of interest is the count of users, obtained by examining each of the images from the trail cameras. The relevant list of variables is:
+
+* date: the date
+* Trailhead: the location of the camera
+* year: the winter (2017-2018, etc.)
+* modality: non-motorized, mechanized, hybrid or motorized
+* user.count: the number of users observed on that day
+* weekend: is this day a weekend?
+* has_sled: does this user have a snowmobile?
+* Zone: Gothic Rd. and Snodgrass users were grouped, as were the Brush and Cement Creek users.
+* rating_above: CAIC danger rating above treeline
+* rating_near: CAIC danger rating near treeline
+* rating_below: CAIC danger rating below treeline
+* snow_depth: snow depth
+* change_depth: change in snow depth since yesterday (new snow, compaction or melt)
+* air_temp: average air temperature
+* snow_density: snow density
+* past3snow: cumulative change_depth for the past three days
+
+# Graphical analysis of data
+
+We begin with some visual assessments of the relationships between the user count and the other variables.
+
+## Weather and snow conditions
+
+Most of the patterns in the data relate to user group preferences that don't change much year to year or depending on conditions. The bulk of the motorized users head to Kebler, and non-motorized users to Snodgrass. The population of mechanized and hybrid users is much smaller than the the two primary categories. Some shift in these patterns year to year is visible. For example, motorized use has been concentrating at Kebler and moving away from Slate and Washington Gulch. Effects of weather and conditions are subtle but not absent, and are detected in our model.
+
+```{r fig.height=4}
+ggplot(by_zone, aes(change_depth, user.count, color = Zone))+
+  geom_jitter(height = 0, width = 0.2, alpha = 0.5)+
+  facet_grid(modality~year)+
+  scale_y_log10()+
+  labs(x="New Snow (in)", y="# Users")
+```
+
+
+
+```{r,fig.height=4}
+ggplot(by_zone, aes(air_temp, user.count, color = Zone))+
+  geom_jitter(height = 0, width = 0.2, alpha = 0.5)+
+  facet_grid(modality~year)+
+  scale_y_log10()+
+  labs(x="Air Temperature (F)", y="# Users")
+```
+
+
+##  CAIC Danger Rating
+
+Personal experience suggests that most activity involving avalanche prone slopes happens near treeline, motivating the choice to focus on this as a predictor. Using above and below treeline ratings shows similar patterns, confirming the validity of this choice. There is a definite decrease in users with a rating of 4 (high danger). No other strong differences are visible at other ratings. 
+
+```{r, fig.height=3}
+ggplot(na.omit(by_zone), aes(rating_near, user.count, fill=rating_near))+
+  geom_jitter(aes(color=rating_near))+
+  geom_boxplot(outlier.shape = NA)+
+  scale_y_log10()+
+  facet_grid(has_sled~Zone)+
+  scale_fill_manual(values = c("green", "yellow", "orange", "red"))+
+  scale_color_manual(values = c("green", "yellow", "orange", "red"),guide=FALSE)+
+  labs(x="", y="# Users", fill="CAIC Rating\n(NTL)")
+
+```
+
+## Season to season trends by user type and location
+
+Total usage has remained fairly stable, with a definite uptick in non-motorized usage this past season. Motorized users head to Kebler in increasing numbers.
+
+```{r, fig.height=2}
+year_totals <- by_zone %>%
+  group_by(year, Zone, modality) %>%
+  summarise(users = sum(user.count, na.rm = TRUE))
+ggplot(year_totals, aes(year, users, fill=modality))+
+  geom_col()+
+  facet_grid(~Zone)+
+  theme(axis.text.x=element_text(angle=60, hjust=1))+
+  scale_fill_hue(direction=-1)+
+  labs(x="Year", y="# Users")
+```
+
+##  Within season trends
+
+More people are out on the weekend than during the week. There is a jump in usage in the last week of the calendar year, otherwise we see a gradual increase until sometime mid March.
+
+```{r, fig.height=2}
+day_totals <- by_zone %>% 
+  group_by(date, weekend) %>%
+  summarise(users = sum(user.count, na.rm = TRUE)) %>%
+  arrange(desc(users))
+
+#head(day_totals, 10)
+
+ggplot(day_totals, aes((yday(date)+30)%%365, users))+
+  geom_smooth(span=0.3)+
+  geom_point(aes(color=weekend))+
+  scale_x_continuous(breaks = c(0,31,62,90,120), 
+                     labels = c("Dec 1", "Jan 1", "Feb 1", "Mar 1", "Apr 1"))+
+  labs(x="", y="# Users")+
+  ylim(0,NA)
+```
+
+
+
+Breaking this graphic into users with and without a snowmobile, we see that the variance is greater in the non-motorized groups, and the mid March peak is more pronounced for motorized and hybrid users.
+
+```{r, fig.height=2}
+day_totals_modes <- by_zone %>% 
+  group_by(date, weekend, has_sled) %>%
+  summarise(users = sum(user.count, na.rm = TRUE)) %>%
+  arrange(desc(users))
+
+ggplot(day_totals_modes, aes((yday(date)+30)%%365, users))+
+  geom_point(aes(color=weekend))+
+   geom_smooth(span=0.4)+
+  scale_x_continuous(breaks = c(0,31,62,90,120), 
+                     labels = c("Dec 1", "Jan 1", "Feb 1", "Mar 1", "Apr 1"))+
+  #scale_y_log10()+
+  labs(x="", y="# Users")+
+  facet_grid(~has_sled)+
+  ylim(0,NA)
+```
+
+
+#  A model for effects of weather and danger rating on visitation rates
+
+A generalized linear model was fit using a negative binomial conditional distribution and a log link function. Akaike's Information Criterion was used to determine the most appropriate form of the model and most significant variables. Variables selected were modality, Zone, rating_near, air_temp, change_depth, snow_depth, snow_density and weekend, as well as the interactions between modality and Zone and modality and weekend.    
+
+## Model assessment
+
+Variable significance in the model is done using an analysis of deviance, which is analogous to analysis of variance (ANOVA). The variables in the model were selected for, so all register as significant. The least levels of significance are present in change_depth and air_temp.
+
+```{r}
+model1 <- glm.nb(user.count ~ modality*(Zone+rating_near)+air_temp+change_depth+
+                   snow_depth+snow_density+weekend, 
+                 data=by_zone)
+anova(model1)
+#summary(model1)
+weather_ests <- exp(coef(model1)[c("snow_depth", "change_depth", "snow_density","air_temp")])
+rating_ests <- exp(coef(model1)[c("rating_near2", "rating_near3", "rating_near4")])  
+highD_ests <- exp(coef(model1)[c("modalityMechanized:rating_near4","modalityHybrid:rating_near4")]) 
+m1_CI <- confint(model1)
+weather_confs <- exp(m1_CI[c("snow_depth", "change_depth", "snow_density", "air_temp"),])
+rating_confs <- exp(m1_CI[c("rating_near2", "rating_near3", "rating_near4"),])
+highD_confs <- exp(m1_CI[c("modalityMechanized:rating_near4","modalityHybrid:rating_near4"),])
+```
+
+## Graphical assessment of the model
+
+We can use the model to create simulated data and visually compare this to the actual data as an added check on the model's utility. To the extent that this graphic looks like the one above using the real data, the model is providing an accurate picture of the situation. 
+
+```{r, fig.height=4}
+n=5000
+pts <- function(x){rnorm(n,mean(x, na.rm=T),sd(x, na.rm=T))}
+ptsf <- function(x)(sample(levels(x), n, replace = TRUE, prob=table(x)))
+newdata <- with(by_zone, data.frame(modality=ptsf(modality),
+                                      Zone=ptsf(Zone),
+                                      rating_near=ptsf(rating_near),
+                                      air_temp=pts(air_temp),
+                                      change_depth=pts(change_depth),
+                                      snow_depth=pts(snow_depth),
+                                    snow_density=pts(snow_density),
+                                    weekend=ptsf(weekend),
+                                    year=ptsf(year),
+                                    has_sled=ptsf(has_sled)))
+newdata$modality <- factor(newdata$modality, levels = c("Non.motor", "Mechanized", "Hybrid", "Motorized"))
+newdata$Zone <- factor(newdata$Zone, levels = c("Kebler", "Slate River", "Wash. Gulch", "East River", "Brush/Cement"))
+newdata$user.count <- predict(model1, newdata, type="response")
+newdata[newdata$user.count<1,]$user.count <- 0
+ggplot(newdata, aes(air_temp, user.count, color = Zone))+
+  geom_jitter(height = 0, width = 0.2, alpha = 0.5)+
+  facet_grid(modality~year)+
+  scale_y_log10()+
+  labs(title="Simulated data", x="Air Temperature (F)", y="# Users")
+```
+
+## Model details
+
+The most relevant details of how the model functions follow. The graphs show ranges for the estimated percentage increase or decrease in users corresponding with a one-unit change in the relevant variable.
+
+##  Weather and snow conditions
+
+Colder temperatures, heavy snow, new snow, and a deep snowpack correlate with decreased visitation. FOr example, an increase of $1^\circ F$ is expected to correspond with an increase in visitation of slightly less than $2\%$, whereas an inch of new snow is expected to correspond with a decrease in visitation of slightly more than $2\%$, although we are less confident in this latter effect.
+
+```{r, fig.height=2}
+weather_model <- data.frame(var.labels=factor(names(weather_ests), levels=names(weather_ests)), weather_ests, 
+                        low95 = weather_confs[,1], up95 = weather_confs[,2])
+ggplot(weather_model, aes(var.labels, weather_ests))+
+  geom_pointrange(aes(ymin=low95, ymax=up95))+
+  geom_hline(yintercept=1, linetype = "dashed", color = "red")+
+  labs(x = "", y =  "Expected User Count Multiplier per Unit Change")+ coord_flip()
+```
+
+##  CAIC danger rating (Near Treeline)
+
+Moderate and considerable ratings correlate some with decreased visitation. High danger has more correlation.
+
+```{r, fig.height=1.5}
+rating_model <- data.frame(var.labels=factor(names(rating_ests), levels=names(rating_ests)), rating_ests, 
+                        low95 = rating_confs[,1], up95 = rating_confs[,2])
+ggplot(rating_model, aes(var.labels, rating_ests))+
+  geom_pointrange(aes(ymin=low95, ymax=up95))+
+  geom_hline(yintercept=1, linetype = "dashed", color = "red")+
+  labs(x = "", y =  "Expected User Count Multiplier")+ coord_flip()
+```
+
+###  High ratings and modality
+
+For mechanized and hybrid users, the effects of high danger ratings are amplified. We expect that this is for different reasons. Fat bikes don't work well in the deep snow, and hybrid users are likely reading the avalanche bulletins and heading to the resort or choosing other activities on high danger days.
+
+```{r, fig.height=1}
+highD_model <- data.frame(var.labels=factor(names(highD_ests), levels=names(highD_ests)), highD_ests, 
+                        low95 = highD_confs[,1], up95 = highD_confs[,2])
+ggplot(highD_model, aes(var.labels, highD_ests))+
+  geom_pointrange(aes(ymin=low95, ymax=up95))+
+  geom_hline(yintercept=1, linetype = "dashed", color = "red")+
+  labs(x = "", y =  "Expected User Count Multiplier")+ coord_flip()
+
+```
+
+
+
